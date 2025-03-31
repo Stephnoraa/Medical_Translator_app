@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Healthcare Translation App for multilingual patient communication">
+    <title>Healthcare Translator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24">
+                    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91c4.59-1.15 8-5.86 8-10.91V5L12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5s5 2.24 5 5s-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3z"/>
+                </svg>
+                <h1>Healthcare Translator</h1>
+            </div>
+            <div class="status-indicator" id="connectionStatus">
+                <span class="status-dot online"></span>
+                <span class="status-text">Online</span>
+            </div>
+        </header>
+
+        <main class="app-content">
+            <section class="language-selector-section">
+                <div class="language-selector-container">
+                    <div class="language-selector">
+                        <label for="providerLanguage">Provider Language</label>
+                        <select id="providerLanguage" class="language-select">
+                            {% for code, name in languages.items() %}
+                            <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <button id="switchLanguagesBtn" class="switch-btn" aria-label="Switch languages">
+                        <svg viewBox="0 0 24 24" class="switch-icon">
+                            <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
+                        </svg>
+                    </button>
+
+                    <div class="language-selector">
+                        <label for="patientLanguage">Patient Language</label>
+                        <select id="patientLanguage" class="language-select">
+                            {% for code, name in languages.items() %}
+                            <option value="{{ code }}" {% if code == 'es' %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="translation-section">
+                <div class="translation-panel">
+                    <!-- Provider Panel -->
+                    <div class="translation-card provider-card" id="providerCard">
+                        <div class="card-header">
+                            <div class="role-indicator">
+                                <svg class="role-icon" viewBox="0 0 24 24">
+                                    <path d="M12 2L4 5v6.09c0 5.05 3.41 9.76 8 10.91c4.59-1.15 8-5.86 8-10.91V5L12 2zm0 15c-2.76 0-5-2.24-5-5s2.24-5 5-5s5 2.24 5 5s-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3s3-1.34 3-3s-1.34-3-3-3z"/>
+                                </svg>
+                                <h2>Healthcare Provider</h2>
+                            </div>
+                            <div class="speaker-indicator" id="providerSpeaking">
+                                <span class="speaking-dot"></span>
+                                <span class="speaking-text">Speaking</span>
+                            </div>
+                        </div>
+                        <div class="transcript-container">
+                            <div class="transcript-box" id="providerBox" data-role="provider"></div>
+                            <div class="transcript-status" id="providerStatus"></div>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="providerRecordBtn" class="record-btn">
+                                <svg class="btn-icon mic-icon" viewBox="0 0 24 24">
+                                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+                                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                </svg>
+                                Start Recording
+                            </button>
+                            <button id="providerPlayBtn" class="play-btn hidden">
+                                <svg class="btn-icon" viewBox="0 0 24 24">
+                                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                </svg>
+                                Play Audio
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Patient Panel -->
+                    <div class="translation-card patient-card" id="patientCard">
+                        <div class="card-header">
+                            <div class="role-indicator">
+                                <svg class="role-icon" viewBox="0 0 24 24">
+                                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                </svg>
+                                <h2>Patient</h2>
+                            </div>
+                            <div class="speaker-indicator" id="patientSpeaking">
+                                <span class="speaking-dot"></span>
+                                <span class="speaking-text">Speaking</span>
+                            </div>
+                        </div>
+                        <div class="transcript-container">
+                            <div class="transcript-box" id="patientBox" data-role="patient"></div>
+                            <div class="transcript-status" id="patientStatus"></div>
+                        </div>
+                        <div class="action-buttons">
+                            <button id="patientRecordBtn" class="record-btn">
+                                <svg class="btn-icon mic-icon" viewBox="0 0 24 24">
+                                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5z"/>
+                                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                                </svg>
+                                Start Recording
+                            </button>
+                            <button id="patientPlayBtn" class="play-btn hidden">
+                                <svg class="btn-icon" viewBox="0 0 24 24">
+                                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                                </svg>
+                                Play Audio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="controls-section">
+                <button id="switchSpeakerBtn" class="switch-btn">
+                    <svg class="btn-icon" viewBox="0 0 24 24">
+                        <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
+                    </svg>
+                    Switch Speaker
+                </button>
+                <button id="clearHistoryBtn" class="clear-btn">
+                    <svg class="btn-icon" viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                    Clear History
+                </button>
+            </section>
+
+            <!-- Conversation History -->
+            <section class="history-section">
+                <div class="history-header">
+                    <h2>Conversation History</h2>
+                    <div class="history-actions">
+                        <button id="exportHistoryBtn" class="export-btn" aria-label="Export conversation">
+                            <svg class="btn-icon" viewBox="0 0 24 24">
+                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+                            </svg>
+                            Export
+                        </button>
+                    </div>
+                </div>
+                <div id="conversationHistory" class="history-content"></div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>© 2023 Healthcare Translator | <a href="#privacy" id="privacyLink">Privacy Policy</a></p>
+        </footer>
+
+        <!-- Privacy Policy Modal -->
+        <div id="privacyModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Privacy Policy</h2>
+                    <button class="close-modal" id="closePrivacyModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Data Privacy and Security</strong></p>
+                    <p>This application is designed with patient confidentiality in mind:</p>
+                    <ul>
+                        <li>No conversation data is permanently stored on our servers</li>
+                        <li>Audio recordings are processed in real-time and immediately discarded</li>
+                        <li>Translations are performed using secure API connections</li>
+                        <li>No patient identifying information is collected</li>
+                    </ul>
+                    <p>For healthcare providers: Please ensure you follow your organization's privacy protocols when using this tool.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading translator...</p>
+    </div>
+
+    <!-- Error toast -->
+    <div id="errorToast" class="error-toast">
+        <div class="error-content">
+            <svg class="error-icon" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <span id="errorMessage">An error occurred</span>
+        </div>
+        <button id="dismissError" class="dismiss-error">&times;</button>
+    </div>
+
+    <audio id="audioPlayer" style="display: none;"></audio>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
