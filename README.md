@@ -1,6 +1,8 @@
 
 # Healthcare Translation Web App
 
+# Read User Guide and Code Documentation here: https://v0-medi-bridge-app-redesign.vercel.app/
+
 ![Healthcare Translation App](https://via.placeholder.com/800x400?text=Healthcare+Translation+App)
 
 A web-based application that enables real-time, multilingual translation between patients and healthcare providers. This tool converts spoken input into text, provides a live transcript, and offers a translated version with audio playback.
