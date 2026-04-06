@@ -1,5 +1,8 @@
 # Ignore environment variables
 .env
+YARNGPT_API_KEY=sk_live_dwQeEbbHmEmExRLibqveXG0sjwDpRvinYpCxp16TW1A
+GOOGLE_API_KEY=AIzaSyB7uR56EyaniSG-9Kf2TqGmOO2PQhIwZR4
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
