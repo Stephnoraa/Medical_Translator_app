@@ -1,11 +1,12 @@
 
-# Healthcare Translation Web App
 
-# Read User Guide and Code Documentation here: https://v0-medi-bridge-app-redesign.vercel.app/
+# Medical Translator App
 
-![Healthcare Translation App](https://via.placeholder.com/800x400?text=Healthcare+Translation+App)
+**Live User Guide & Docs:** https://v0-medi-bridge-app-redesign.vercel.app/
 
-A web-based application that enables real-time, multilingual translation between patients and healthcare providers. This tool converts spoken input into text, provides a live transcript, and offers a translated version with audio playback.
+<img src="https://via.placeholder.com/800x400?text=Healthcare+Translation+App" alt="Healthcare Translation App" width="100%"/>
+
+A web-based application for real-time, multilingual translation between patients and healthcare providers. Converts spoken input into text, provides live transcripts, and offers translated audio playback.
 
 ## 🌟 Features
 
@@ -21,57 +22,75 @@ A web-based application that enables real-time, multilingual translation between
 - **Backend**: Flask (Python)
 - **Frontend**: HTML, CSS, JavaScript
 - **Speech Recognition**: Web Speech API
-- **Translation**: LibreTranslate API with Google Translate fallback
-- **Text-to-Speech**: gTTS (Google Text-to-Speech)
+- **Translation**: Google Translate API (via deep-translator)
+- **Text-to-Speech**: YarnGPT (Nigerian languages), gTTS (others)
 
 ## 📋 Requirements
 
-- Python 3.7+
-- Flask 2.0.1
+- Python 3.10+
+- Flask 3.x
+- python-dotenv
 - Modern web browser (Chrome, Edge, or Safari recommended for best speech recognition support)
 
-## 🚀 Installation
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/healthcare-translator.git
-   cd healthcare-translator
+## 🚀 Installation & Setup
+
+1. **Clone the repository:**
+  ```bash
+  git clone https://github.com/Stephnoraa/Medical_Translator_app.git
+  cd Medical_Translator_app
   ```
 
 
 
-2. Create and activate a virtual environment:
 
-```shellscript
-# Windows
-python -m venv .venv
-.venv\Scripts\activate
+2. **Create and activate a virtual environment:**
 
-# macOS/Linux
-python -m venv .venv
-source .venv/bin/activate
-```
+  ```sh
+  # Windows
+  python -m venv .venv
+  .venv\Scripts\activate
 
-
-3. Install dependencies:
-
-```shellscript
-pip install -r requirements.txt
-```
+  # macOS/Linux
+  python3 -m venv .venv
+  source .venv/bin/activate
+  ```
 
 
-4. Run the application:
 
-```shellscript
-python app.py
-```
+3. **Install dependencies:**
+
+  ```sh
+  pip install -r requirements.txt
+  ```
 
 
-5. Open your browser and navigate to:
 
-```plaintext
-http://127.0.0.1:5000
-```
+4. **Set up environment variables:**
+
+  - Create a `.env` file in the project root:
+    ```env
+    YARNGPT_API_KEY=your_yarngpt_api_key_here
+    GOOGLE_API_KEY=your_google_api_key_here
+    ```
+  - Never commit your `.env` file to version control!
+
+5. **Run the application (development):**
+
+  ```sh
+  python app.py
+  ```
+
+  Or for production (recommended):
+
+  ```sh
+  python run_waitress.py
+  ```
+
+6. **Open your browser and navigate to:**
+
+  http://127.0.0.1:5000
+
 
 
 
@@ -84,6 +103,7 @@ http://127.0.0.1:5000
 4. **Play Audio**: Click the "Play Audio" button to hear the translation
 5. **Switch Roles**: Use the "Switch Speaker" button to change between provider and patient
 6. **Export Conversation**: Click "Export" to save the conversation history
+
 
 
 ## 🌐 Supported Languages
@@ -102,12 +122,23 @@ http://127.0.0.1:5000
 - Korean
 
 
+
 ## 🔒 Privacy & Security
 
 - No conversation data is permanently stored on our servers
 - Audio recordings are processed in real-time and immediately discarded
 - Translations are performed using secure API connections
 - No patient identifying information is collected
+
+## ⚠️ Notes
+
+- Do **not** commit your `.env` file or any files in `static/audio/` to public repositories.
+- For YarnGPT and Google Translate features, you must provide valid API keys in your `.env` file.
+- If you deploy to a cloud service, set environment variables in your deployment settings.
+
+---
+
+For questions or contributions, open an issue or pull request on GitHub.
 
   
 
