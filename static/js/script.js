@@ -66,7 +66,8 @@ document.addEventListener('DOMContentLoaded', function() {
         "hi": "Hindi",
         "ja": "Japanese",
         "ko": "Korean",
-        "auto": "Auto Detect"
+        "yo": "Yoruba",
+        "ha": "Hausa"
     };
 
     // Debug log to verify script is loading

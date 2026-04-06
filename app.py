@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 import os
+from dotenv import load_dotenv
 import uuid
 import requests
 from gtts import gTTS
@@ -9,12 +10,17 @@ import time
 from deep_translator import GoogleTranslator
 import re
 
+# Load environment variables from .env file
+load_dotenv()
+
 app = Flask(__name__, static_folder='static', static_url_path='/static')
 CORS(app)  # Enable CORS for all routes
 
 # Dictionary of supported languages with their codes
 LANGUAGES = {
     "en": "English",
+    "yo": "Yoruba",
+    "ha": "Hausa",
     "es": "Spanish",
     "fr": "French",
     "de": "German",
@@ -25,11 +31,18 @@ LANGUAGES = {
     "ar": "Arabic",
     "hi": "Hindi",
     "ja": "Japanese",
-    "ko": "Korean"
+    "ko": "Korean",
 }
 
-# LibreTranslate API endpoint (free and open source)
-LIBRETRANSLATE_URL = "https://libretranslate.de/translate"
+
+
+# Google Cloud Translation API endpoint
+GOOGLE_TRANSLATE_URL = "https://translation.googleapis.com/language/translate/v2"
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
+
+# YarnGPT TTS API
+YARNGPT_TTS_URL = "https://yarngpt.ai/api/v1/tts"
+YARNGPT_API_KEY = os.environ.get("YARNGPT_API_KEY")
 
 # Comprehensive Medical Dictionary
 MEDICAL_JARGON = {
@@ -804,9 +817,10 @@ def index():
     return render_template('index.html', languages=LANGUAGES, app_name="MedLingo")
 
 
+
 @app.route('/translate', methods=['POST'])
 def translate_text():
-    """Translate text using LibreTranslate API with fallback to deep_translator"""
+    """Translate text using Google Cloud Translation API"""
     data = request.json
     text = data.get('text')
     source_lang = data.get('source_lang')
@@ -815,67 +829,34 @@ def translate_text():
     if not all([text, target_lang]):
         return jsonify({"error": "Missing required parameters"}), 400
 
-    # First try with LibreTranslate
     try:
-        # Prepare the request to LibreTranslate
+        params = {
+            "key": GOOGLE_API_KEY
+        }
         payload = {
             "q": text,
-            "source": source_lang if source_lang != 'auto' else 'auto',
-            "target": target_lang,
-            "format": "text"
+            "target": target_lang
         }
+        if source_lang and source_lang != 'auto':
+            payload["source"] = source_lang
 
-        headers = {
-            "Content-Type": "application/json"
-        }
-
-        # Make the request to LibreTranslate with a timeout
-        response = requests.post(LIBRETRANSLATE_URL, json=payload, headers=headers, timeout=5)
-
+        response = requests.post(GOOGLE_TRANSLATE_URL, params=params, json=payload, timeout=8)
         if response.status_code == 200:
             result = response.json()
-            translated_text = result.get("translatedText", "")
-
-            # Find medical jargon in the original text
+            translated_text = result["data"]["translations"][0]["translatedText"]
             medical_terms = find_medical_terms(text)
-
             return jsonify({
                 "original_text": text,
                 "translated_text": translated_text,
                 "source_lang": source_lang,
                 "target_lang": target_lang,
-                "service": "LibreTranslate",
+                "service": "Google Cloud Translation API",
                 "medical_terms": medical_terms
             })
+        else:
+            return jsonify({"error": f"Translation failed: {response.text}"}), 500
     except Exception as e:
-        print(f"LibreTranslate error: {str(e)}")
-        # Continue to fallback
-
-    # Fallback to deep_translator (Google Translate)
-    try:
-        print("Falling back to deep_translator...")
-
-        # Handle 'auto' source language
-        if source_lang == 'auto':
-            source_lang = 'auto'
-
-        # Use deep_translator's GoogleTranslator
-        translator = GoogleTranslator(source=source_lang, target=target_lang)
-        translated_text = translator.translate(text)
-
-        # Find medical jargon in the original text
-        medical_terms = find_medical_terms(text)
-
-        return jsonify({
-            "original_text": text,
-            "translated_text": translated_text,
-            "source_lang": source_lang,
-            "target_lang": target_lang,
-            "service": "GoogleTranslator (fallback)",
-            "medical_terms": medical_terms
-        })
-    except Exception as e:
-        print(f"Fallback translation error: {str(e)}")
+        print(f"Google Cloud Translation error: {str(e)}")
         return jsonify({"error": f"Translation failed: {str(e)}"}), 500
 
 
@@ -896,9 +877,11 @@ def find_medical_terms(text):
     return found_terms
 
 
+
+# New TTS endpoint that uses YarnGPT for Nigerian languages, gTTS for others
 @app.route('/text-to-speech', methods=['POST'])
 def text_to_speech():
-    """Convert text to speech using gTTS"""
+    """Convert text to speech using YarnGPT for Nigerian languages, gTTS for others"""
     data = request.json
     text = data.get('text')
     lang = data.get('lang')
@@ -906,22 +889,44 @@ def text_to_speech():
     if not all([text, lang]):
         return jsonify({"error": "Missing required parameters"}), 400
 
+    # Use YarnGPT for Yoruba and Hausa
+    if lang in ["yo", "ha"]:
+        try:
+            # Map language code to YarnGPT voice
+            voice_map = {"yo": "Idera", "ha": "Idera"}  # Update with actual YarnGPT voices
+            voice = voice_map.get(lang, "Idera")
+            headers = {
+                "Authorization": f"Bearer {YARNGPT_API_KEY}"
+            }
+            payload = {
+                "text": text,
+                "voice": voice
+            }
+            response = requests.post(YARNGPT_TTS_URL, headers=headers, json=payload, stream=True, timeout=15)
+            if response.status_code == 200:
+                audio_dir = os.path.join('static', 'audio')
+                os.makedirs(audio_dir, exist_ok=True)
+                filename = f"speech_{uuid.uuid4()}.mp3"
+                filepath = os.path.join(audio_dir, filename)
+                with open(filepath, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                return jsonify({"audio_url": f"/static/audio/{filename}"})
+            else:
+                return jsonify({"error": f"YarnGPT error: {response.status_code} {response.text}"}), 500
+        except Exception as e:
+            print(f"YarnGPT TTS error: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+
+    # Fallback to gTTS for other languages
     try:
-        # Create audio directory if it doesn't exist
         audio_dir = os.path.join('static', 'audio')
         os.makedirs(audio_dir, exist_ok=True)
-
-        # Generate a unique filename
         filename = f"speech_{uuid.uuid4()}.mp3"
         filepath = os.path.join(audio_dir, filename)
-
-        # Generate speech using gTTS
-        tts = gTTS(text=text, lang=lang.split('-')[0])  # gTTS uses primary language code
+        tts = gTTS(text=text, lang=lang.split('-')[0])
         tts.save(filepath)
-
-        return jsonify({
-            "audio_url": f"/static/audio/{filename}"
-        })
+        return jsonify({"audio_url": f"/static/audio/{filename}"})
     except Exception as e:
         print(f"Text-to-speech error: {str(e)}")
         return jsonify({"error": str(e)}), 500
